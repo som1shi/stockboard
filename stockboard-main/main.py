@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as finance
 import pandas as pd
 import altair as alt
-from datetime import date 
+from datetime import date
 import datetime as dt
 
 import plotly.graph_objs as go
@@ -23,20 +23,21 @@ user_input = st.text_input("Stock", 'MSFT')
 
 brk = finance.Ticker(user_input)
 
+x = brk.info['shortName']
 start = st.date_input("Date", dt.datetime(2022, 9, 1))
-st.header(brk.info['shortName'])
+st.header(x)
 
 county = st.slider('Sample Size', 1, 50, 25)
 
 
-x = brk.info['shortName']
+
 url = 'https://news.google.com/search?q='+ x
 request_result=requests.get(url)
 soup = bs4.BeautifulSoup(request_result.text, "html.parser")
 heading_object=soup.find_all( 'h3' )
 
-newsapi = NewsApiClient(api_key='')
-co = cohere.Client('')
+newsapi = NewsApiClient(api_key='81945b20aa7547bd8a0066b30c989955')
+co = cohere.Client('19V72BKoutucEkQ7l7jOFgPhotWKJkyeyltSBabt')
 
 count = 0
 init=[]
@@ -47,7 +48,7 @@ for info in heading_object:
         break
 
 
-response = co.classify(model='finance-sentiment', inputs=init)
+response = co.classify(model='large', inputs=init)
 #print('The confidence levels of the labels are: {}'.format(
        #response.classifications))
 #def get_result(result): # takes result of applying cohere classify
