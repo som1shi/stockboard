@@ -17,7 +17,7 @@ import nltk
 nltk.download('vader_lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-response = SentimentIntensityAnalyzer()
+Analyzer = SentimentIntensityAnalyzer()
 
 st.title("StockBoard")
 
@@ -27,7 +27,7 @@ user_input = st.text_input("Stock", 'MSFT')
 brk = finance.Ticker(user_input)
 
 x = brk.info['shortName']
-start = st.date_input("Date", dt.datetime(2022, 9, 1))
+start = st.date_input("Date", dt.datetime(2023, 1, 1))
 st.header(x)
 
 county = st.slider('Sample Size', 1, 50, 25)
@@ -50,33 +50,21 @@ for info in heading_object:
     if count==county:
         break
 
-
-#response = co.classify(model='large', inputs=init)
-#print('The confidence levels of the labels are: {}'.format(
-       #response.classifications))
-#def get_result(result): # takes result of applying cohere classify
 neg_confidences = []
 neu_confidences = []
 pos_confidences = []
 
-def get_confidence_values(response):
-    result = str(response.classifications)
-    result = result.split(' ')
-    processed_result=[]
-    for i in result:
-        i=i.replace("\n","").replace("\t","").replace("}","").replace(",","").replace("labels","").replace("]","").replace("{","").replace(":","").replace("'","").replace("[","")
-        processed_result.append(i)
-    #print(processed_result)
-    for i in range(len(processed_result)):
-        if processed_result[i]=='NEGATIVE':
-            #print("Negative Confidence Value: " + processed_result[i+3])
-            neg_confidences.append(float(processed_result[i+3]))
-        if processed_result[i]=='NEUTRAL':
-            #print("Neutral Confidence Value: " + processed_result[i+3])
-            neu_confidences.append(float(processed_result[i+3]))
-        if processed_result[i]=='POSITIVE':
-            #print("Positive Confidence Value: " + processed_result[i+3])
-            pos_confidences.append(float(processed_result[i+3]))
+
+def get_confidence_values(articles):
+
+    response = []
+    for article in articles:
+        response.append(Analyzer.polarity_scores(article))
+
+    for i in response:
+        neg_confidences.append(i["neg"])
+        neu_confidences.append(i["neu"])
+        pos_confidences.append(i["pos"])
     
 def get_averages(list1, list2, list3):
     print(sum(list1)/len(list1))
@@ -85,13 +73,6 @@ def get_averages(list1, list2, list3):
 
 
 today = date.today().strftime("%m/%d/%Y")
-
-
-
- 
-
-
-
 
 
 starty = start.strftime("%m/%d/%Y")
@@ -109,7 +90,7 @@ df['Date'] = df['Date'].dt.strftime("%Y-%m-%d")
 df['Stock Value'] = hist['Close'].values
 df.tail()
 
-get_confidence_values(response)
+get_confidence_values(init)
 
 listy = [1, 2, 3]
 
@@ -122,24 +103,25 @@ randomlist =  random.choices(listy, cum_weights= ((sum(pos_confidences)/len(pos_
 
 
 entry = {'Date': df['Date'].iloc[-1], 'EstStock': df['Stock Value'].iloc[-1]}
-df = df.append(entry, ignore_index = True)
-while randomlist:
 
-    value = df['EstStock'].iloc[-1]
+df.loc[len(df.index)] = [entry['Date'], entry['EstStock']]
+
+while randomlist:
+    value = df['Stock Value'].iloc[len(df.index)-1]
     if randomlist[0] == 1:
-        valy = value * (1 + random.choice(pos_confidences)*0.04)
+        valy = value * (1 + random.choice(pos_confidences)*0.05)
     elif randomlist[0] == 2:
         valy = value
     elif randomlist[0] == 3:
         valy = value * (1 - random.choice(neg_confidences)*0.05)
 
     randomlist.pop(0)
-    y = df['Date'].iloc[-1]
+    y = df['Date'].iloc[len(df.index)-1]
     daty =  f'{y}'
     datetime_object = dt.datetime.strptime(daty[:10], '%Y-%m-%d')
     datetime_object = datetime_object + dt.timedelta(days=1)
-    entry = {'Date': datetime_object, 'EstStock': valy}
-    df = df.append(entry, ignore_index = True)
+
+    df.loc[len(df.index)] = [datetime_object, valy] 
 
 
 df.set_index('Date', inplace=True)
